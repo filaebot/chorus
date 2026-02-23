@@ -696,7 +696,7 @@ function renderUI(origin: string): string {
       background: var(--bg);
       color: var(--text);
       font-family: var(--mono);
-      font-size: 14px;
+      font-size: 16px; /* Prevents iOS zoom on focus */
       transition: all 0.15s ease;
     }
 
@@ -772,6 +772,7 @@ function renderUI(origin: string): string {
 
     .search-row button {
       white-space: nowrap;
+      min-width: 100px; /* Prevents button resize during loading state */
     }
 
     /* STATS - Horizontal ticker style */
