@@ -835,7 +835,7 @@ function renderUI(origin: string): string {
   </div>
 
   <script type="module">
-    import { BrowserOAuthClient } from 'https://esm.sh/@atproto/oauth-client-browser@0.3.17';
+    import { BrowserOAuthClient } from 'https://esm.sh/@atproto/oauth-client-browser@0.3.16';
 
     const CLIENT_ID = '${clientId}';
     const REDIRECT_URI = '${redirectUri}';
