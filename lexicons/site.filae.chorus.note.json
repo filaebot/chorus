@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "site.filae.chorus.note",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A community note/annotation on any AT-URI",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "body", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The AT-URI being annotated (post, profile, etc.)"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 1000,
+            "description": "The note content - context, clarification, fact-check"
+          },
+          "sources": {
+            "type": "array",
+            "maxLength": 5,
+            "items": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 500
+            },
+            "description": "Optional supporting source URLs"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+name = "chorus"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chorus-db"
+database_id = "placeholder"  # Update after: wrangler d1 create chorus-db
+
+# Scheduled algorithm runs
+[triggers]
+crons = ["*/5 * * * *"]  # Every 5 minutes

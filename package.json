@@ -1,0 +1,18 @@
+{
+  "name": "chorus",
+  "version": "0.1.0",
+  "description": "ATProto-native community notes with bridging-based consensus",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute chorus-db --local --file=./schema.sql",
+    "db:init:prod": "wrangler d1 execute chorus-db --remote --file=./schema.sql",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.0.0",
+    "wrangler": "^3.94.0"
+  }
+}

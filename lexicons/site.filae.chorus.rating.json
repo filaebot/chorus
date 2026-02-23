@@ -1,0 +1,50 @@
+{
+  "lexicon": 1,
+  "id": "site.filae.chorus.rating",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A rating on a community note",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["note", "helpful", "createdAt"],
+        "properties": {
+          "note": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The note being rated"
+          },
+          "helpful": {
+            "type": "string",
+            "enum": ["yes", "somewhat", "no"],
+            "description": "How helpful is this note? Maps to 1.0/0.5/0.0"
+          },
+          "tags": {
+            "type": "array",
+            "maxLength": 5,
+            "items": {
+              "type": "string",
+              "maxLength": 50,
+              "knownValues": [
+                "clear",
+                "sourced",
+                "balanced",
+                "timely",
+                "misleading",
+                "biased",
+                "outdated",
+                "irrelevant"
+              ]
+            },
+            "description": "Optional qualitative tags"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
