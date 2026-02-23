@@ -542,295 +542,600 @@ function renderUI(origin: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chorus - Community Notes on ATProto</title>
+  <title>CHORUS — Community Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #1a1a2e;
-      --surface: #16213e;
-      --border: #0f3460;
-      --text: #e2e2e2;
-      --text-muted: #a0a0a0;
-      --accent: #e94560;
-      --accent-hover: #ff6b6b;
-      --certified: #4ade80;
-      --pending: #fbbf24;
-      --needs-more: #60a5fa;
+      --bg: #0a0a0a;
+      --surface: #111;
+      --surface-elevated: #1a1a1a;
+      --border: #333;
+      --border-heavy: #555;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --accent: #ff3e00;
+      --accent-glow: rgba(255, 62, 0, 0.3);
+      --certified: #00ff88;
+      --certified-glow: rgba(0, 255, 136, 0.2);
+      --pending: #ffcc00;
+      --needs-more: #00ccff;
+      --rejected: #ff0055;
+      --mono: 'Space Mono', monospace;
+      --serif: 'Instrument Serif', Georgia, serif;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--mono);
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      /* Noise texture overlay */
+      background-image:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      background-blend-mode: overlay;
+      background-size: 200px 200px;
     }
-    .container { max-width: 800px; margin: 0 auto; }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* HEADER - Brutalist typography */
     header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 60px;
+      position: relative;
     }
-    h1 { color: var(--accent); margin-bottom: 8px; }
-    .subtitle { color: var(--text-muted); font-size: 0.95rem; }
 
-    /* Auth section */
-    .auth-section {
-      background: var(--surface);
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-    }
-    .auth-logged-in { display: flex; justify-content: space-between; align-items: center; }
-    .auth-logged-in .handle { color: var(--accent); }
-
-    /* Search */
-    .search-section {
-      background: var(--surface);
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-    }
-    .search-section label { display: block; margin-bottom: 8px; color: var(--text-muted); }
-    .search-row { display: flex; gap: 10px; }
-    .search-row input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg);
+    .logo {
+      font-family: var(--serif);
+      font-size: clamp(4rem, 15vw, 8rem);
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      line-height: 0.85;
       color: var(--text);
-      font-size: 14px;
+      position: relative;
+      display: inline-block;
     }
-    .search-row input:focus { outline: none; border-color: var(--accent); }
 
-    /* Buttons */
-    button {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.2s;
+    .logo::before {
+      content: 'CHORUS';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      color: var(--accent);
+      z-index: -1;
+      opacity: 0.7;
     }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--border); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Notes list */
-    .notes-section {
+    .tagline {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      margin-top: 20px;
+      padding-left: 4px;
+      border-left: 2px solid var(--accent);
+    }
+
+    /* SECTIONS - Asymmetric boxes */
+    .section {
       background: var(--surface);
-      padding: 20px;
-      border-radius: 8px;
       border: 1px solid var(--border);
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      position: relative;
     }
-    .notes-header {
+
+    .section::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 20px;
+      right: 20px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .section-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
     }
-    .notes-header h2 { font-size: 1.1rem; }
-    .note-count { color: var(--text-muted); font-size: 0.9rem; }
+
+    .section-body {
+      padding: 20px;
+    }
+
+    /* AUTH */
+    .auth-logged-in {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .handle {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* INPUTS - Raw, brutalist */
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 20px var(--accent-glow);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    /* BUTTONS - Bold, stark */
+    button {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 12px 24px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background: var(--text);
+      border-color: var(--text);
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-elevated);
+      border-color: var(--text-muted);
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* SEARCH ROW */
+    .search-row {
+      display: flex;
+      gap: 0;
+    }
+
+    .search-row input {
+      flex: 1;
+      border-right: none;
+    }
+
+    .search-row button {
+      white-space: nowrap;
+    }
+
+    /* STATS - Horizontal ticker style */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--serif);
+      font-style: italic;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* NOTES */
+    .notes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+
+    .notes-title {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-style: italic;
+    }
+
+    .note-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
 
     .note-item {
       background: var(--bg);
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 12px;
       border: 1px solid var(--border);
+      margin-bottom: 16px;
+      position: relative;
     }
-    .note-body { margin-bottom: 10px; line-height: 1.5; }
+
+    .note-item::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--border-heavy) 0%, transparent 100%);
+    }
+
+    .note-body {
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.7;
+      font-family: var(--serif);
+    }
+
     .note-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
       color: var(--text-muted);
     }
-    .note-status {
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: 500;
+
+    .note-author {
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
     }
-    .status-certified { background: var(--certified); color: #000; }
-    .status-pending { background: var(--pending); color: #000; }
-    .status-needs_more { background: var(--needs-more); color: #000; }
-    .status-rejected { background: #ef4444; color: white; }
+
+    /* STATUS BADGES - Stark, industrial */
+    .note-status {
+      padding: 4px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: var(--mono);
+    }
+
+    .status-certified {
+      background: var(--certified);
+      color: var(--bg);
+      box-shadow: 0 0 20px var(--certified-glow);
+    }
+
+    .status-pending {
+      background: var(--pending);
+      color: var(--bg);
+    }
+
+    .status-needs_more {
+      background: var(--needs-more);
+      color: var(--bg);
+    }
+
+    .status-rejected {
+      background: var(--rejected);
+      color: var(--text);
+    }
 
     .note-sources {
-      margin-top: 10px;
-      padding-top: 10px;
+      padding: 12px 20px;
       border-top: 1px solid var(--border);
+      font-size: 12px;
     }
-    .note-sources a { color: var(--accent); text-decoration: none; font-size: 0.85rem; }
-    .note-sources a:hover { text-decoration: underline; }
 
-    /* Rating buttons */
+    .note-sources a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .note-sources a:hover {
+      border-bottom-color: var(--accent);
+    }
+
+    /* RATING BUTTONS */
     .rating-buttons {
       display: flex;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 0;
+      padding: 0 20px 20px;
     }
+
     .rating-btn {
-      padding: 6px 12px;
-      font-size: 0.8rem;
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 10px;
+      border-right-width: 0;
     }
-    .rating-btn.active { background: var(--accent); color: white; }
 
-    /* Create note form */
-    .create-note-section {
-      background: var(--surface);
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+    .rating-btn:last-child {
+      border-right-width: 1px;
+    }
+
+    .rating-btn.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+
+    /* FORM */
+    .form-group {
       margin-bottom: 20px;
     }
-    .create-note-section h3 { margin-bottom: 15px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.9rem; }
-    .form-group textarea, .form-group input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      font-family: inherit;
-    }
-    .form-group textarea { min-height: 100px; resize: vertical; }
 
-    /* Stats */
-    .stats-section {
-      background: var(--surface);
-      padding: 15px 20px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      margin-bottom: 20px;
-      display: flex;
-      gap: 30px;
-      font-size: 0.9rem;
-    }
-    .stat-item { color: var(--text-muted); }
-    .stat-item strong { color: var(--text); }
-
-    /* Empty state */
-    .empty-state {
-      text-align: center;
-      padding: 40px;
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
       color: var(--text-muted);
     }
 
-    /* Messages */
-    .message {
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin-bottom: 15px;
+    /* INFO BOX */
+    .info-box {
+      background: var(--surface-elevated);
+      border-left: 3px solid var(--accent);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      line-height: 1.6;
     }
-    .message-error { background: #7f1d1d; color: #fca5a5; }
-    .message-success { background: #14532d; color: #86efac; }
 
-    /* Login form */
-    .login-form { display: flex; gap: 10px; }
+    .info-box strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .info-box em {
+      font-family: var(--serif);
+      font-style: italic;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 16px;
+    }
+
+    /* MESSAGES */
+    .message {
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      border-left: 3px solid;
+    }
+
+    .message-error {
+      background: rgba(255, 0, 85, 0.1);
+      border-color: var(--rejected);
+      color: #ff6b8a;
+    }
+
+    .message-success {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--certified);
+      color: var(--certified);
+    }
+
+    /* LOGIN */
+    .login-form {
+      display: flex;
+      gap: 0;
+    }
+
     .login-form input {
       flex: 1;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg);
-      color: var(--text);
+      border-right: none;
     }
 
     .hidden { display: none !important; }
 
-    /* Info */
-    .info-box {
-      background: var(--border);
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      font-size: 0.9rem;
-      line-height: 1.5;
+    /* DECORATIVE ELEMENTS */
+    .corner-mark {
+      position: fixed;
+      font-size: 10px;
+      color: var(--text-muted);
+      opacity: 0.4;
+      font-family: var(--mono);
+      letter-spacing: 0.1em;
     }
-    .info-box strong { color: var(--accent); }
+
+    .corner-mark.top-right {
+      top: 20px;
+      right: 20px;
+    }
+
+    .corner-mark.bottom-left {
+      bottom: 20px;
+      left: 20px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .logo { font-size: 3.5rem; }
+      .stats-row { flex-direction: column; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
+      .search-row { flex-direction: column; }
+      .search-row input { border-right: 1px solid var(--border); border-bottom: none; }
+      .login-form { flex-direction: column; }
+      .login-form input { border-right: 1px solid var(--border); border-bottom: none; }
+    }
   </style>
 </head>
 <body>
+  <div class="corner-mark top-right">ATProto × Bridging</div>
+  <div class="corner-mark bottom-left">v0.1</div>
+
   <div class="container">
     <header>
-      <h1>🎵 Chorus</h1>
-      <p class="subtitle">Community Notes on ATProto — bridging-based consensus</p>
+      <div class="logo">CHORUS</div>
+      <p class="tagline">Community notes with bridging-based consensus</p>
     </header>
 
     <div id="message" class="hidden"></div>
 
-    <!-- Auth Section -->
-    <div class="auth-section">
-      <div id="auth-loading">Initializing...</div>
-      <div id="auth-logged-out" class="hidden">
-        <div class="login-form">
-          <input type="text" id="handle-input" placeholder="Enter your handle (e.g. alice.bsky.social)" />
-          <button id="login-btn" class="btn-primary">Sign In</button>
-        </div>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-notes">—</div>
+        <div class="stat-label">Notes</div>
       </div>
-      <div id="auth-logged-in" class="auth-logged-in hidden">
-        <span>Signed in as <span class="handle" id="user-handle"></span></span>
-        <button id="logout-btn" class="btn-secondary">Sign Out</button>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-certified">—</div>
+        <div class="stat-label">Certified</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-raters">—</div>
+        <div class="stat-label">Raters</div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div id="stats-section" class="stats-section">
-      <div class="stat-item">Notes: <strong id="stat-notes">-</strong></div>
-      <div class="stat-item">Certified: <strong id="stat-certified">-</strong></div>
-      <div class="stat-item">Raters: <strong id="stat-raters">-</strong></div>
+    <!-- Auth Section -->
+    <div class="section">
+      <div class="section-header">
+        <span>Identity</span>
+      </div>
+      <div class="section-body">
+        <div id="auth-loading">Initializing...</div>
+        <div id="auth-logged-out" class="hidden">
+          <div class="login-form">
+            <input type="text" id="handle-input" placeholder="yourname.bsky.social" />
+            <button id="login-btn" class="btn-primary">Connect</button>
+          </div>
+        </div>
+        <div id="auth-logged-in" class="auth-logged-in hidden">
+          <span>Connected as <span class="handle" id="user-handle"></span></span>
+          <button id="logout-btn" class="btn-secondary">Disconnect</button>
+        </div>
+      </div>
     </div>
 
     <!-- Search Section -->
-    <div class="search-section">
-      <label>Look up notes on a Bluesky post</label>
-      <div class="search-row">
-        <input type="text" id="subject-input" placeholder="Paste Bluesky post URL (e.g. https://bsky.app/profile/handle/post/xyz)" />
-        <button id="search-btn" class="btn-primary">Search</button>
+    <div class="section">
+      <div class="section-header">
+        <span>Lookup</span>
+      </div>
+      <div class="section-body">
+        <div class="search-row">
+          <input type="text" id="subject-input" placeholder="Paste Bluesky post URL" />
+          <button id="search-btn" class="btn-primary">Search</button>
+        </div>
       </div>
     </div>
 
     <!-- Notes Section (shown after search) -->
-    <div id="notes-section" class="notes-section hidden">
-      <div class="notes-header">
-        <h2>Notes on this post</h2>
+    <div id="notes-section" class="section hidden">
+      <div class="section-header">
+        <span>Notes</span>
         <span class="note-count" id="note-count"></span>
       </div>
-      <div id="notes-list"></div>
-      <div id="empty-notes" class="empty-state hidden">
-        No notes yet. Be the first to add context!
+      <div class="section-body">
+        <div id="notes-list"></div>
+        <div id="empty-notes" class="empty-state hidden">
+          No notes yet. Be the first to add context.
+        </div>
       </div>
     </div>
 
     <!-- Create Note Section (shown after search, if logged in) -->
-    <div id="create-note-section" class="create-note-section hidden">
-      <h3>Add a note</h3>
-      <div class="info-box">
-        <strong>How notes work:</strong> Your note will be reviewed by other users.
-        Notes that receive positive ratings from people with <em>diverse perspectives</em>
-        get certified. Partisan notes that only appeal to one viewpoint don't make the cut.
+    <div id="create-note-section" class="section hidden">
+      <div class="section-header">
+        <span>Add Note</span>
       </div>
-      <div class="form-group">
-        <label>Your note</label>
-        <textarea id="note-body" placeholder="Add helpful context, fact-checks, or clarifications..."></textarea>
+      <div class="section-body">
+        <div class="info-box">
+          <strong>How it works:</strong> Notes get certified when people with
+          <em>diverse perspectives</em> agree they are helpful.
+          Partisan notes that only appeal to one viewpoint do not make the cut.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your note</label>
+          <textarea id="note-body" placeholder="Add helpful context, fact-checks, or clarifications..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sources (optional)</label>
+          <textarea id="note-sources" placeholder="https://example.com/source" style="min-height: 60px;"></textarea>
+        </div>
+        <button id="submit-note-btn" class="btn-primary">Submit Note</button>
       </div>
-      <div class="form-group">
-        <label>Sources (optional, one URL per line)</label>
-        <textarea id="note-sources" placeholder="https://example.com/source1&#10;https://example.com/source2" style="min-height: 60px;"></textarea>
-      </div>
-      <button id="submit-note-btn" class="btn-primary">Submit Note</button>
     </div>
   </div>
 
@@ -923,13 +1228,13 @@ function renderUI(origin: string): string {
 
       try {
         $('login-btn').disabled = true;
-        $('login-btn').textContent = 'Signing in...';
+        $('login-btn').textContent = 'Connecting...';
         await oauthClient.signIn(handle);
       } catch (e) {
         console.error('Login error:', e);
-        showMessage('Failed to sign in: ' + e.message);
+        showMessage('Failed to connect: ' + e.message);
         $('login-btn').disabled = false;
-        $('login-btn').textContent = 'Sign In';
+        $('login-btn').textContent = 'Connect';
       }
     }
 
@@ -986,7 +1291,7 @@ function renderUI(origin: string): string {
       if (!input) return;
 
       $('search-btn').disabled = true;
-      $('search-btn').textContent = 'Searching...';
+      $('search-btn').textContent = '...';
 
       try {
         // Convert bsky.app URL to AT-URI
@@ -1027,7 +1332,7 @@ function renderUI(origin: string): string {
 
     function renderNotes() {
       notesList.innerHTML = '';
-      $('note-count').textContent = loadedNotes.length + ' note(s)';
+      $('note-count').textContent = loadedNotes.length;
 
       if (loadedNotes.length === 0) {
         emptyNotes.classList.remove('hidden');
@@ -1042,24 +1347,25 @@ function renderUI(origin: string): string {
         div.dataset.uri = note.uri;
 
         const statusClass = 'status-' + note.stats.status;
+        const statusLabel = note.stats.status.replace('_', ' ');
         const sources = note.sources || [];
 
         div.innerHTML = \`
           <div class="note-body">\${escapeHtml(note.body)}</div>
           <div class="note-meta">
-            <span>by \${note.author.slice(0, 20)}...</span>
-            <span class="note-status \${statusClass}">\${note.stats.status}</span>
+            <span class="note-author">\${note.author.slice(0, 24)}...</span>
+            <span class="note-status \${statusClass}">\${statusLabel}</span>
           </div>
           \${sources.length > 0 ? \`
             <div class="note-sources">
-              Sources: \${sources.map(s => '<a href="' + s + '" target="_blank" rel="noopener">' + new URL(s).hostname + '</a>').join(', ')}
+              ↳ \${sources.map(s => '<a href="' + s + '" target="_blank" rel="noopener">' + new URL(s).hostname + '</a>').join(' · ')}
             </div>
           \` : ''}
           \${session ? \`
             <div class="rating-buttons">
-              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="yes">👍 Helpful</button>
-              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="somewhat">🤔 Somewhat</button>
-              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="no">👎 Not helpful</button>
+              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="yes">Helpful</button>
+              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="somewhat">Somewhat</button>
+              <button class="rating-btn btn-secondary" data-uri="\${note.uri}" data-helpful="no">Not Helpful</button>
             </div>
           \` : ''}
         \`;
