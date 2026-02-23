@@ -9,6 +9,10 @@
     "db:init:prod": "wrangler d1 execute chorus-db --remote --file=./schema.sql",
     "test": "vitest"
   },
+  "dependencies": {
+    "@atproto/api": "^0.18.21",
+    "hono": "^4.6.0"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241106.0",
     "typescript": "^5.3.3",

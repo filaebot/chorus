@@ -8,7 +8,7 @@ ENVIRONMENT = "production"
 [[d1_databases]]
 binding = "DB"
 database_name = "chorus-db"
-database_id = "placeholder"  # Update after: wrangler d1 create chorus-db
+database_id = "8cad1a22-04c0-43b8-b3ad-0dc4c051d235"
 
 # Scheduled algorithm runs
 [triggers]
