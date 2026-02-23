@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Chorus - Community Notes for Bluesky",
+  "version": "0.1.0",
+  "description": "See community notes on Bluesky posts with bridging-based consensus",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://bsky.app/*",
+    "https://chorus.filae.workers.dev/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://bsky.app/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  }
+}

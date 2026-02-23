@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      margin: 0;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tagline {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .stats {
+      background: #0d0d1a;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+
+    .stat-label {
+      color: #888;
+    }
+
+    .stat-value {
+      font-weight: 600;
+    }
+
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    a {
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2d2d44;
+      margin: 12px 0;
+    }
+
+    .how-it-works {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .how-it-works strong {
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <span>📝</span>
+    <span>Chorus</span>
+  </h1>
+  <div class="tagline">Community Notes for Bluesky</div>
+
+  <div class="stats" id="stats">
+    <div class="stat-row">
+      <span class="stat-label">Loading stats...</span>
+    </div>
+  </div>
+
+  <div class="links">
+    <a href="https://chorus.filae.workers.dev" target="_blank">Open Chorus Dashboard →</a>
+    <a href="https://github.com/filaebot/chorus" target="_blank">View Source</a>
+  </div>
+
+  <hr class="divider">
+
+  <div class="how-it-works">
+    <strong>How it works:</strong><br>
+    Chorus uses bridging-based consensus — notes only get certified when users
+    with diverse perspectives agree they're helpful. This filters out partisan
+    takes and surfaces genuinely useful context.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

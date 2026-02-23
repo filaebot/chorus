@@ -104,6 +104,16 @@ A rating on a note:
 }
 ```
 
+## Browser Extension
+
+The `extension/` directory contains a Chrome extension that overlays community notes on Bluesky posts:
+
+1. Open `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select the `extension/` directory
+
+As you browse Bluesky, posts with community notes will show a badge. Click to expand and see full note details.
+
 ## Development
 
 ```bash
