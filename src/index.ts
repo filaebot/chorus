@@ -60,12 +60,12 @@ app.get('/oauth/client-metadata.json', (c) => {
   });
 });
 
-// OAuth callback page
+// OAuth callback page — preserve query params (code, state, iss) for BrowserOAuthClient.init()
 app.get('/oauth/callback', (c) => {
   return c.html(`<!DOCTYPE html>
 <html><head><title>Chorus - Redirecting...</title></head>
 <body><p>Completing sign-in...</p>
-<script>window.location.href = '/' + window.location.hash;</script>
+<script>window.location.href = '/' + window.location.search + window.location.hash;</script>
 </body></html>`);
 });
 
@@ -1323,44 +1323,61 @@ function renderUI(origin: string): string {
           handleResolver: 'https://bsky.social',
         });
 
-        // Timeout after 5s — init() can hang on corrupted IndexedDB state
+        // Longer timeout for callback (token exchange involves network requests)
+        const isCallback = window.location.search.includes('code=') || window.location.search.includes('state=');
+        const timeout = isCallback ? 15000 : 5000;
+
         const result = await Promise.race([
           oauthClient.init(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth init timed out')), 5000)),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth init timed out')), timeout)),
         ]);
 
         if (result?.session) {
           session = result.session;
+          // Clean up OAuth params from URL after successful login
+          if (isCallback) {
+            window.history.replaceState({}, '', '/');
+          }
           showLoggedIn();
         } else {
           showLoggedOut();
         }
       } catch (e) {
         console.error('OAuth init error:', e);
-        await clearAtprotoStorage();
-        // Retry once after clearing — fresh state should work
-        try {
-          oauthClient = new BrowserOAuthClient({
-            clientMetadata: {
-              client_id: CLIENT_ID,
-              client_name: 'Chorus',
-              client_uri: ORIGIN,
-              redirect_uris: [REDIRECT_URI],
-              scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
-              grant_types: ['authorization_code', 'refresh_token'],
-              response_types: ['code'],
-              token_endpoint_auth_method: 'none',
-              application_type: 'web',
-              dpop_bound_access_tokens: true,
-            },
-            handleResolver: 'https://bsky.social',
-          });
-          await Promise.race([
-            oauthClient.init(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth retry timed out')), 5000)),
-          ]);
-        } catch (retryErr) {
-          console.error('OAuth retry failed:', retryErr);
+        // Only clear storage if this wasn't a callback attempt (don't destroy auth code on first try)
+        if (!window.location.search.includes('code=')) {
+          await clearAtprotoStorage();
+          // Retry once after clearing — fresh state should work
+          try {
+            oauthClient = new BrowserOAuthClient({
+              clientMetadata: {
+                client_id: CLIENT_ID,
+                client_name: 'Chorus',
+                client_uri: ORIGIN,
+                redirect_uris: [REDIRECT_URI],
+                scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
+                grant_types: ['authorization_code', 'refresh_token'],
+                response_types: ['code'],
+                token_endpoint_auth_method: 'none',
+                application_type: 'web',
+                dpop_bound_access_tokens: true,
+              },
+              handleResolver: 'https://bsky.social',
+            });
+            const retryResult = await Promise.race([
+              oauthClient.init(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth retry timed out')), 5000)),
+            ]);
+            if (retryResult?.session) {
+              session = retryResult.session;
+              showLoggedIn();
+              return;
+            }
+          } catch (retryErr) {
+            console.error('OAuth retry failed:', retryErr);
+          }
+        } else {
+          console.error('OAuth callback failed — auth code exchange may have failed');
         }
         showLoggedOut();
       }
