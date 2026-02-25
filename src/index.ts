@@ -60,12 +60,23 @@ app.get('/oauth/client-metadata.json', (c) => {
   });
 });
 
-// OAuth callback page — preserve query params (code, state, iss) for BrowserOAuthClient.init()
+// OAuth callback page — preserve auth params (code, state, iss) for BrowserOAuthClient.init()
+// Auth server may return params as query string OR hash fragment depending on response_mode.
+// BrowserOAuthClient.init() reads from query string, so we always forward as query params.
 app.get('/oauth/callback', (c) => {
   return c.html(`<!DOCTYPE html>
 <html><head><title>Chorus - Redirecting...</title></head>
 <body><p>Completing sign-in...</p>
-<script>window.location.href = '/' + window.location.search + window.location.hash;</script>
+<script>
+  // Collect params from both query string and hash fragment
+  var params = new URLSearchParams(window.location.search);
+  if (window.location.hash && window.location.hash.length > 1) {
+    var hashParams = new URLSearchParams(window.location.hash.substring(1));
+    hashParams.forEach(function(v, k) { if (!params.has(k)) params.set(k, v); });
+  }
+  var qs = params.toString();
+  window.location.href = '/' + (qs ? '?' + qs : '');
+</script>
 </body></html>`);
 });
 
@@ -1236,7 +1247,7 @@ function renderUI(origin: string): string {
   <!-- Longer timeout on callback (token exchange takes time), shorter for normal load -->
   <script>
     (function() {
-      var isCallback = window.location.search.indexOf('code=') !== -1 || window.location.search.indexOf('state=') !== -1;
+      var isCallback = window.location.search.indexOf('code=') !== -1 || window.location.search.indexOf('state=') !== -1 || window.location.hash.indexOf('code=') !== -1 || window.location.hash.indexOf('state=') !== -1;
       var timeout = isCallback ? 20000 : 8000;
       setTimeout(function() {
         var loading = document.getElementById('auth-loading');
@@ -1329,8 +1340,22 @@ function renderUI(origin: string): string {
     }
 
     async function initOAuth() {
-      const isCallback = window.location.search.includes('code=') || window.location.search.includes('state=');
-      console.log('[chorus] initOAuth start, isCallback:', isCallback, 'search:', window.location.search.substring(0, 80));
+      // Check both query string and hash for auth params (auth server may use either)
+      const hasSearchParams = window.location.search.includes('code=') || window.location.search.includes('state=');
+      const hasHashParams = window.location.hash.includes('code=') || window.location.hash.includes('state=');
+
+      // If params ended up in hash, move them to query string so BrowserOAuthClient can find them
+      if (!hasSearchParams && hasHashParams) {
+        console.log('[chorus] Auth params in hash fragment, moving to query string...');
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const url = new URL(window.location.href);
+        hashParams.forEach(function(v, k) { url.searchParams.set(k, v); });
+        url.hash = '';
+        window.history.replaceState({}, '', url.toString());
+      }
+
+      const isCallback = hasSearchParams || hasHashParams;
+      console.log('[chorus] initOAuth start, isCallback:', isCallback, 'search:', window.location.search.substring(0, 80), 'hash:', window.location.hash.substring(0, 80));
 
       try {
         oauthClient = createOAuthClient();
