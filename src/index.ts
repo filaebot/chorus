@@ -1281,7 +1281,11 @@ function renderUI(origin: string): string {
           handleResolver: 'https://bsky.social',
         });
 
-        const result = await oauthClient.init();
+        // Timeout after 5s — init() can hang on corrupted IndexedDB state
+        const result = await Promise.race([
+          oauthClient.init(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth init timed out')), 5000)),
+        ]);
 
         if (result?.session) {
           session = result.session;
@@ -1291,6 +1295,16 @@ function renderUI(origin: string): string {
         }
       } catch (e) {
         console.error('OAuth init error:', e);
+        // If init hung or failed, clear stale IndexedDB state and show login
+        try {
+          const dbs = await indexedDB.databases();
+          for (const db of dbs) {
+            if (db.name && db.name.includes('atproto')) {
+              indexedDB.deleteDatabase(db.name);
+              console.log('Cleared stale DB:', db.name);
+            }
+          }
+        } catch (dbErr) { /* indexedDB.databases() not supported everywhere */ }
         showLoggedOut();
       }
     }
