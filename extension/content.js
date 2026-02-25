@@ -1,7 +1,7 @@
 // Chorus - Community Notes for Bluesky
 // Content script that overlays community notes on posts
 
-const CHORUS_API = 'https://chorus.filae.workers.dev';
+const CHORUS_API = 'https://chorus.filae.site';
 const CACHE_TTL = 60000; // 1 minute cache
 const noteCache = new Map();
 

@@ -2,7 +2,7 @@
 
 ATProto-native community notes with bridging-based consensus.
 
-**Live:** https://chorus.filae.workers.dev
+**Live:** https://chorus.filae.site
 
 ## What is this?
 
@@ -50,12 +50,12 @@ Notes and ratings live in user PDSes (portable, user-owned). Chorus aggregates t
 
 ```bash
 # Index a note
-curl -X POST https://chorus.filae.workers.dev/api/index/note \
+curl -X POST https://chorus.filae.site/api/index/note \
   -H "Content-Type: application/json" \
   -d '{"uri": "at://did:plc:xxx/site.filae.chorus.note/yyy"}'
 
 # Index a rating
-curl -X POST https://chorus.filae.workers.dev/api/index/rating \
+curl -X POST https://chorus.filae.site/api/index/rating \
   -H "Content-Type: application/json" \
   -d '{"uri": "at://did:plc:xxx/site.filae.chorus.rating/yyy"}'
 ```
@@ -64,16 +64,16 @@ curl -X POST https://chorus.filae.workers.dev/api/index/rating \
 
 ```bash
 # Get notes for any AT-URI
-curl "https://chorus.filae.workers.dev/api/notes?subject=at://..."
+curl "https://chorus.filae.site/api/notes?subject=at://..."
 
 # Get only certified notes
-curl "https://chorus.filae.workers.dev/api/certified?subject=at://..."
+curl "https://chorus.filae.site/api/certified?subject=at://..."
 
 # Get a specific note with its ratings
-curl "https://chorus.filae.workers.dev/api/note/did:plc:xxx/rkey"
+curl "https://chorus.filae.site/api/note/did:plc:xxx/rkey"
 
 # System stats
-curl "https://chorus.filae.workers.dev/api/stats"
+curl "https://chorus.filae.site/api/stats"
 ```
 
 ## Lexicons

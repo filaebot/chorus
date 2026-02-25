@@ -39,7 +39,7 @@ async function main() {
 
   // Now index it
   console.log('\nIndexing note...');
-  const indexRes = await fetch('https://chorus.filae.workers.dev/api/index/note', {
+  const indexRes = await fetch('https://chorus.filae.site/api/index/note', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ uri: result.data.uri }),

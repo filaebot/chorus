@@ -8,7 +8,7 @@
   ],
   "host_permissions": [
     "https://bsky.app/*",
-    "https://chorus.filae.workers.dev/*"
+    "https://chorus.filae.site/*"
   ],
   "content_scripts": [
     {

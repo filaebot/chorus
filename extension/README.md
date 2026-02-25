@@ -22,7 +22,7 @@ The extension injects a content script into bsky.app that:
 
 1. Watches for post elements in the DOM
 2. Extracts post URLs and resolves them to AT-URIs
-3. Queries `chorus.filae.workers.dev/api/notes` for each post
+3. Queries `chorus.filae.site/api/notes` for each post
 4. Injects note badges into posts that have community notes
 
 ## Status indicators
@@ -33,7 +33,7 @@ The extension injects a content script into bsky.app that:
 
 ## Privacy
 
-- Only communicates with bsky.app (for handle resolution) and chorus.filae.workers.dev (for notes)
+- Only communicates with bsky.app (for handle resolution) and chorus.filae.site (for notes)
 - No data is sent to any other servers
 - No tracking or analytics
 

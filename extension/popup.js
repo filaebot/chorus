@@ -1,6 +1,6 @@
 // Chorus popup - load and display stats
 
-const CHORUS_API = 'https://chorus.filae.workers.dev';
+const CHORUS_API = 'https://chorus.filae.site';
 
 async function loadStats() {
   const statsEl = document.getElementById('stats');
