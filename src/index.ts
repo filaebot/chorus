@@ -50,7 +50,7 @@ app.get('/oauth/client-metadata.json', (c) => {
     client_id: `${origin}/oauth/client-metadata.json`,
     client_name: 'Chorus',
     client_uri: origin,
-    redirect_uris: [`${origin}/oauth/callback`],
+    redirect_uris: [`${origin}/`],
     scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
@@ -60,9 +60,8 @@ app.get('/oauth/client-metadata.json', (c) => {
   });
 });
 
-// OAuth callback page — preserve auth params (code, state, iss) for BrowserOAuthClient.init()
-// Auth server may return params as query string OR hash fragment depending on response_mode.
-// BrowserOAuthClient.init() reads from query string, so we always forward as query params.
+// OAuth callback page — legacy fallback. Primary redirect_uri is now '/'.
+// Auth server may still redirect here if client metadata was cached, so forward to root.
 app.get('/oauth/callback', (c) => {
   return c.html(`<!DOCTYPE html>
 <html><head><title>Chorus - Redirecting...</title></head>
@@ -546,7 +545,7 @@ function formatNote(row: any) {
 
 function renderUI(origin: string): string {
   const clientId = `${origin}/oauth/client-metadata.json`;
-  const redirectUri = `${origin}/oauth/callback`;
+  const redirectUri = `${origin}/`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1355,7 +1354,8 @@ function renderUI(origin: string): string {
       }
 
       const isCallback = hasSearchParams || hasHashParams;
-      console.log('[chorus] initOAuth start, isCallback:', isCallback, 'search:', window.location.search.substring(0, 80), 'hash:', window.location.hash.substring(0, 80));
+      console.log('[chorus] initOAuth start, isCallback:', isCallback, 'pathname:', window.location.pathname, 'search:', window.location.search.substring(0, 120), 'hash:', window.location.hash.substring(0, 80));
+      console.log('[chorus] redirect_uri:', REDIRECT_URI);
 
       try {
         oauthClient = createOAuthClient();
@@ -1373,7 +1373,7 @@ function renderUI(origin: string): string {
           ]);
         }
 
-        console.log('[chorus] init result:', result ? 'got session' : 'no session');
+        console.log('[chorus] init result:', result ? (result.session ? 'got session' : 'result but no session') : 'no session/undefined');
 
         if (result?.session) {
           session = result.session;
@@ -1382,6 +1382,13 @@ function renderUI(origin: string): string {
           }
           showLoggedIn();
         } else {
+          if (isCallback) {
+            // Callback detected but no session — likely stale PKCE state from before a redirect_uri change.
+            // Clear storage and show login so user can try again cleanly.
+            console.warn('[chorus] Callback detected but init returned no session. Clearing stale state.');
+            await clearAtprotoStorage();
+            window.history.replaceState({}, '', '/');
+          }
           showLoggedOut();
         }
       } catch (e) {
