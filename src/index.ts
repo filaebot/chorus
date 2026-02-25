@@ -1232,16 +1232,21 @@ function renderUI(origin: string): string {
     </div>
   </div>
 
-  <!-- Fallback: if module import takes >8s, show login form anyway -->
+  <!-- Fallback: if module import takes too long, show login form anyway -->
+  <!-- Longer timeout on callback (token exchange takes time), shorter for normal load -->
   <script>
-    setTimeout(function() {
-      var loading = document.getElementById('auth-loading');
-      if (loading && !loading.classList.contains('hidden')) {
-        console.warn('Module load timeout — showing login form');
-        loading.classList.add('hidden');
-        document.getElementById('auth-logged-out').classList.remove('hidden');
-      }
-    }, 8000);
+    (function() {
+      var isCallback = window.location.search.indexOf('code=') !== -1 || window.location.search.indexOf('state=') !== -1;
+      var timeout = isCallback ? 20000 : 8000;
+      setTimeout(function() {
+        var loading = document.getElementById('auth-loading');
+        if (loading && !loading.classList.contains('hidden')) {
+          console.warn('Module load timeout (' + timeout + 'ms) — showing login form');
+          loading.classList.add('hidden');
+          document.getElementById('auth-logged-out').classList.remove('hidden');
+        }
+      }, timeout);
+    })();
   </script>
   <script type="module">
     import { BrowserOAuthClient } from 'https://esm.sh/@atproto/oauth-client-browser@0.3.16';
@@ -1305,36 +1310,48 @@ function renderUI(origin: string): string {
       } catch {}
     }
 
+    function createOAuthClient() {
+      return new BrowserOAuthClient({
+        clientMetadata: {
+          client_id: CLIENT_ID,
+          client_name: 'Chorus',
+          client_uri: ORIGIN,
+          redirect_uris: [REDIRECT_URI],
+          scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+          application_type: 'web',
+          dpop_bound_access_tokens: true,
+        },
+        handleResolver: 'https://bsky.social',
+      });
+    }
+
     async function initOAuth() {
+      const isCallback = window.location.search.includes('code=') || window.location.search.includes('state=');
+      console.log('[chorus] initOAuth start, isCallback:', isCallback, 'search:', window.location.search.substring(0, 80));
+
       try {
-        oauthClient = new BrowserOAuthClient({
-          clientMetadata: {
-            client_id: CLIENT_ID,
-            client_name: 'Chorus',
-            client_uri: ORIGIN,
-            redirect_uris: [REDIRECT_URI],
-            scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
-            grant_types: ['authorization_code', 'refresh_token'],
-            response_types: ['code'],
-            token_endpoint_auth_method: 'none',
-            application_type: 'web',
-            dpop_bound_access_tokens: true,
-          },
-          handleResolver: 'https://bsky.social',
-        });
+        oauthClient = createOAuthClient();
 
-        // Longer timeout for callback (token exchange involves network requests)
-        const isCallback = window.location.search.includes('code=') || window.location.search.includes('state=');
-        const timeout = isCallback ? 15000 : 5000;
+        // No timeout for callback — let the token exchange complete
+        // Only timeout normal init (session restore from IndexedDB)
+        let result;
+        if (isCallback) {
+          console.log('[chorus] Processing OAuth callback (no timeout)...');
+          result = await oauthClient.init();
+        } else {
+          result = await Promise.race([
+            oauthClient.init(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth init timed out')), 5000)),
+          ]);
+        }
 
-        const result = await Promise.race([
-          oauthClient.init(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth init timed out')), timeout)),
-        ]);
+        console.log('[chorus] init result:', result ? 'got session' : 'no session');
 
         if (result?.session) {
           session = result.session;
-          // Clean up OAuth params from URL after successful login
           if (isCallback) {
             window.history.replaceState({}, '', '/');
           }
@@ -1343,27 +1360,33 @@ function renderUI(origin: string): string {
           showLoggedOut();
         }
       } catch (e) {
-        console.error('OAuth init error:', e);
-        // Only clear storage if this wasn't a callback attempt (don't destroy auth code on first try)
-        if (!window.location.search.includes('code=')) {
+        console.error('[chorus] OAuth init error:', e);
+
+        if (isCallback) {
+          // Callback failed — try once more with fresh client after clearing stale state
+          console.log('[chorus] Callback failed, clearing storage and retrying...');
           await clearAtprotoStorage();
-          // Retry once after clearing — fresh state should work
           try {
-            oauthClient = new BrowserOAuthClient({
-              clientMetadata: {
-                client_id: CLIENT_ID,
-                client_name: 'Chorus',
-                client_uri: ORIGIN,
-                redirect_uris: [REDIRECT_URI],
-                scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
-                grant_types: ['authorization_code', 'refresh_token'],
-                response_types: ['code'],
-                token_endpoint_auth_method: 'none',
-                application_type: 'web',
-                dpop_bound_access_tokens: true,
-              },
-              handleResolver: 'https://bsky.social',
-            });
+            oauthClient = createOAuthClient();
+            const retryResult = await oauthClient.init();
+            console.log('[chorus] Callback retry result:', retryResult ? 'got session' : 'no session');
+            if (retryResult?.session) {
+              session = retryResult.session;
+              window.history.replaceState({}, '', '/');
+              showLoggedIn();
+              return;
+            }
+          } catch (retryErr) {
+            console.error('[chorus] Callback retry failed:', retryErr);
+          }
+          // Callback exhausted — clean URL and show login
+          window.history.replaceState({}, '', '/');
+          showLoggedOut();
+        } else {
+          // Normal init failed — clear stale state and retry
+          await clearAtprotoStorage();
+          try {
+            oauthClient = createOAuthClient();
             const retryResult = await Promise.race([
               oauthClient.init(),
               new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth retry timed out')), 5000)),
@@ -1374,12 +1397,10 @@ function renderUI(origin: string): string {
               return;
             }
           } catch (retryErr) {
-            console.error('OAuth retry failed:', retryErr);
+            console.error('[chorus] Retry failed:', retryErr);
           }
-        } else {
-          console.error('OAuth callback failed — auth code exchange may have failed');
+          showLoggedOut();
         }
-        showLoggedOut();
       }
     }
 
