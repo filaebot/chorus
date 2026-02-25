@@ -1323,6 +1323,7 @@ function renderUI(origin: string): string {
 
     function createOAuthClient() {
       return new BrowserOAuthClient({
+        responseMode: 'query',
         clientMetadata: {
           client_id: CLIENT_ID,
           client_name: 'Chorus',
