@@ -1232,6 +1232,17 @@ function renderUI(origin: string): string {
     </div>
   </div>
 
+  <!-- Fallback: if module import takes >8s, show login form anyway -->
+  <script>
+    setTimeout(function() {
+      var loading = document.getElementById('auth-loading');
+      if (loading && !loading.classList.contains('hidden')) {
+        console.warn('Module load timeout — showing login form');
+        loading.classList.add('hidden');
+        document.getElementById('auth-logged-out').classList.remove('hidden');
+      }
+    }, 8000);
+  </script>
   <script type="module">
     import { BrowserOAuthClient } from 'https://esm.sh/@atproto/oauth-client-browser@0.3.16';
 
@@ -1261,6 +1272,37 @@ function renderUI(origin: string): string {
       messageEl.className = 'message message-' + type;
       messageEl.classList.remove('hidden');
       setTimeout(() => messageEl.classList.add('hidden'), 5000);
+    }
+
+    async function clearAtprotoStorage() {
+      // Clear IndexedDB
+      try {
+        const dbs = await indexedDB.databases();
+        for (const db of dbs) {
+          if (db.name && db.name.includes('atproto')) {
+            indexedDB.deleteDatabase(db.name);
+            console.log('Cleared stale DB:', db.name);
+          }
+        }
+      } catch (dbErr) {
+        // indexedDB.databases() not supported — try known DB names
+        for (const name of ['atproto-oauth-client', '@atproto/oauth-client-browser']) {
+          try { indexedDB.deleteDatabase(name); } catch {}
+        }
+      }
+      // Clear any related localStorage/sessionStorage
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.includes('atproto') || key.includes('dpop')) {
+            localStorage.removeItem(key);
+          }
+        }
+        for (const key of Object.keys(sessionStorage)) {
+          if (key.includes('atproto') || key.includes('dpop')) {
+            sessionStorage.removeItem(key);
+          }
+        }
+      } catch {}
     }
 
     async function initOAuth() {
@@ -1295,16 +1337,31 @@ function renderUI(origin: string): string {
         }
       } catch (e) {
         console.error('OAuth init error:', e);
-        // If init hung or failed, clear stale IndexedDB state and show login
+        await clearAtprotoStorage();
+        // Retry once after clearing — fresh state should work
         try {
-          const dbs = await indexedDB.databases();
-          for (const db of dbs) {
-            if (db.name && db.name.includes('atproto')) {
-              indexedDB.deleteDatabase(db.name);
-              console.log('Cleared stale DB:', db.name);
-            }
-          }
-        } catch (dbErr) { /* indexedDB.databases() not supported everywhere */ }
+          oauthClient = new BrowserOAuthClient({
+            clientMetadata: {
+              client_id: CLIENT_ID,
+              client_name: 'Chorus',
+              client_uri: ORIGIN,
+              redirect_uris: [REDIRECT_URI],
+              scope: 'atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating',
+              grant_types: ['authorization_code', 'refresh_token'],
+              response_types: ['code'],
+              token_endpoint_auth_method: 'none',
+              application_type: 'web',
+              dpop_bound_access_tokens: true,
+            },
+            handleResolver: 'https://bsky.social',
+          });
+          await Promise.race([
+            oauthClient.init(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('OAuth retry timed out')), 5000)),
+          ]);
+        } catch (retryErr) {
+          console.error('OAuth retry failed:', retryErr);
+        }
         showLoggedOut();
       }
     }
