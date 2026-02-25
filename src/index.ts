@@ -82,6 +82,7 @@ app.get('/oauth/callback', (c) => {
 // Main UI
 app.get('/', (c) => {
   const origin = new URL(c.req.url).origin;
+  c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
   return c.html(renderUI(origin));
 });
 
@@ -1395,25 +1396,13 @@ function renderUI(origin: string): string {
         console.error('[chorus] OAuth init error:', e);
 
         if (isCallback) {
-          // Callback failed — try once more with fresh client after clearing stale state
-          console.log('[chorus] Callback failed, clearing storage and retrying...');
+          // Callback failed — likely stale PKCE state from redirect_uri change.
+          // Clean up and show login form for fresh attempt.
+          console.log('[chorus] Callback failed, clearing stale state for fresh login...');
           await clearAtprotoStorage();
-          try {
-            oauthClient = createOAuthClient();
-            const retryResult = await oauthClient.init();
-            console.log('[chorus] Callback retry result:', retryResult ? 'got session' : 'no session');
-            if (retryResult?.session) {
-              session = retryResult.session;
-              window.history.replaceState({}, '', '/');
-              showLoggedIn();
-              return;
-            }
-          } catch (retryErr) {
-            console.error('[chorus] Callback retry failed:', retryErr);
-          }
-          // Callback exhausted — clean URL and show login
           window.history.replaceState({}, '', '/');
           showLoggedOut();
+          showMessage('Session expired — please sign in again.', 'error');
         } else {
           // Normal init failed — clear stale state and retry
           await clearAtprotoStorage();
