@@ -1013,9 +1013,86 @@ function renderUI(origin: string): string {
       gap: 0;
     }
 
-    .login-form input {
+    .login-form .handle-input-wrapper {
       flex: 1;
+      position: relative;
+    }
+
+    .login-form .handle-input-wrapper input {
+      width: 100%;
       border-right: none;
+    }
+
+    .typeahead-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .typeahead-dropdown.visible {
+      display: block;
+    }
+
+    .typeahead-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .typeahead-item:hover,
+    .typeahead-item.selected {
+      background: rgba(255, 62, 0, 0.1);
+    }
+
+    .typeahead-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .typeahead-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .typeahead-name {
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .typeahead-handle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .typeahead-loading,
+    .typeahead-empty {
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      font-family: var(--mono);
     }
 
     .hidden { display: none !important; }
@@ -1049,7 +1126,7 @@ function renderUI(origin: string): string {
       .search-row { flex-direction: column; }
       .search-row input { border-right: 1px solid var(--border); border-bottom: none; }
       .login-form { flex-direction: column; }
-      .login-form input { border-right: 1px solid var(--border); border-bottom: none; }
+      .login-form .handle-input-wrapper input { border-right: 1px solid var(--border); border-bottom: none; }
     }
   </style>
 </head>
@@ -1090,7 +1167,10 @@ function renderUI(origin: string): string {
         <div id="auth-loading">Initializing...</div>
         <div id="auth-logged-out" class="hidden">
           <div class="login-form">
-            <input type="text" id="handle-input" placeholder="yourname.bsky.social" />
+            <div class="handle-input-wrapper">
+              <input type="text" id="handle-input" placeholder="yourname.bsky.social" autocomplete="off" autocapitalize="off" spellcheck="false" />
+              <div class="typeahead-dropdown" id="typeahead-dropdown"></div>
+            </div>
             <button id="login-btn" class="btn-primary">Connect</button>
           </div>
         </div>
@@ -1539,9 +1619,132 @@ function renderUI(origin: string): string {
       }
     }
 
+    // Typeahead for handle search
+    let debounceTimer = null;
+    let selectedIndex = -1;
+    let currentResults = [];
+    const handleInput = $('handle-input');
+    const typeaheadDropdown = $('typeahead-dropdown');
+
+    function escapeHtmlAttr(str) {
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function hideTypeahead() {
+      typeaheadDropdown.classList.remove('visible');
+      selectedIndex = -1;
+    }
+
+    function selectHandle(handle) {
+      handleInput.value = handle;
+      hideTypeahead();
+    }
+
+    function renderTypeaheadResults() {
+      typeaheadDropdown.innerHTML = currentResults.map((actor, i) => {
+        const name = actor.displayName || actor.handle;
+        return '<div class="typeahead-item' + (i === selectedIndex ? ' selected' : '') + '" data-handle="' + escapeHtmlAttr(actor.handle) + '">'
+          + (actor.avatar
+            ? '<img class="typeahead-avatar" src="' + escapeHtmlAttr(actor.avatar) + '" alt="" />'
+            : '<div class="typeahead-avatar"></div>')
+          + '<div class="typeahead-info">'
+          + '<div class="typeahead-name">' + escapeHtml(name) + '</div>'
+          + '<div class="typeahead-handle">@' + escapeHtml(actor.handle) + '</div>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    function searchHandles(query) {
+      if (debounceTimer) clearTimeout(debounceTimer);
+
+      if (!query || query.length < 2) {
+        hideTypeahead();
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        typeaheadDropdown.innerHTML = '<div class="typeahead-loading">Searching...</div>';
+        typeaheadDropdown.classList.add('visible');
+
+        try {
+          const res = await fetch(
+            'https://public.api.bsky.app/xrpc/app.bsky.actor.searchActorsTypeahead?q='
+            + encodeURIComponent(query) + '&limit=8'
+          );
+
+          if (!res.ok) throw new Error('Search failed');
+
+          const data = await res.json();
+          currentResults = (data.actors || []).map(actor => ({
+            handle: actor.handle,
+            displayName: actor.displayName,
+            avatar: actor.avatar,
+          }));
+          selectedIndex = -1;
+
+          if (currentResults.length === 0) {
+            typeaheadDropdown.innerHTML = '<div class="typeahead-empty">No matches. Enter handle manually.</div>';
+            return;
+          }
+
+          renderTypeaheadResults();
+        } catch (err) {
+          console.error('Typeahead error:', err);
+          typeaheadDropdown.innerHTML = '<div class="typeahead-empty">Search failed. Enter handle manually.</div>';
+        }
+      }, 150);
+    }
+
+    handleInput.addEventListener('input', (e) => {
+      const value = e.target.value.trim().replace(/^@/, '');
+      searchHandles(value);
+    });
+
+    handleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentResults.length > 0) {
+          selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+          renderTypeaheadResults();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentResults.length > 0) {
+          selectedIndex = Math.max(selectedIndex - 1, -1);
+          renderTypeaheadResults();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedIndex >= 0 && currentResults[selectedIndex]) {
+          selectHandle(currentResults[selectedIndex].handle);
+        }
+        hideTypeahead();
+        login();
+      } else if (e.key === 'Escape') {
+        hideTypeahead();
+      }
+    });
+
+    typeaheadDropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.typeahead-item');
+      if (item && item.dataset.handle) {
+        selectHandle(item.dataset.handle);
+        login();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.handle-input-wrapper')) {
+        hideTypeahead();
+      }
+    });
+
     // Event listeners
     $('login-btn').addEventListener('click', login);
-    $('handle-input').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
     $('logout-btn').addEventListener('click', logout);
     $('search-btn').addEventListener('click', searchNotes);
     $('subject-input').addEventListener('keypress', e => { if (e.key === 'Enter') searchNotes(); });
