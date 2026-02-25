@@ -1701,10 +1701,6 @@ function renderUI(origin: string): string {
       return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
     function hideTypeahead() {
       typeaheadDropdown.classList.remove('visible');
       selectedIndex = -1;
