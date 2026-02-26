@@ -79,6 +79,155 @@ app.get('/oauth/callback', (c) => {
 </body></html>`);
 });
 
+// Capability manifest for agent discovery
+app.get('/.well-known/atproto-capabilities', (c) => {
+  const origin = new URL(c.req.url).origin;
+  return c.json({
+    "@context": "https://atproto.com/capabilities/v1",
+    name: "Chorus",
+    description: "ATProto-native community notes with bridging-based consensus. Anyone can annotate any AT-URI (posts, profiles, etc.) with context, fact-checks, or clarifications. Notes get certified when rated helpful by users with diverse perspectives.",
+    url: origin,
+    did: "did:plc:dcb6ifdsru63appkbffy3foy",
+    protocol: "atproto",
+
+    lexicons: [
+      {
+        lexicon: 1,
+        id: "site.filae.chorus.note",
+        defs: {
+          main: {
+            type: "record",
+            description: "A community note/annotation on any AT-URI",
+            key: "tid",
+            record: {
+              type: "object",
+              required: ["subject", "body", "createdAt"],
+              properties: {
+                subject: { type: "string", format: "at-uri", description: "The AT-URI being annotated (post, profile, etc.)" },
+                body: { type: "string", maxLength: 2000, maxGraphemes: 1000, description: "The note content - context, clarification, fact-check" },
+                sources: { type: "array", maxLength: 5, items: { type: "string", format: "uri", maxLength: 500 }, description: "Optional supporting source URLs" },
+                createdAt: { type: "string", format: "datetime" }
+              }
+            }
+          }
+        }
+      },
+      {
+        lexicon: 1,
+        id: "site.filae.chorus.rating",
+        defs: {
+          main: {
+            type: "record",
+            description: "A rating on a community note",
+            key: "tid",
+            record: {
+              type: "object",
+              required: ["note", "helpful", "createdAt"],
+              properties: {
+                note: { type: "string", format: "at-uri", description: "The note being rated" },
+                helpful: { type: "string", enum: ["yes", "somewhat", "no"], description: "How helpful is this note? Maps to 1.0/0.5/0.0" },
+                tags: { type: "array", maxLength: 5, items: { type: "string", maxLength: 50, knownValues: ["clear", "sourced", "balanced", "timely", "misleading", "biased", "outdated", "irrelevant"] }, description: "Optional qualitative tags" },
+                createdAt: { type: "string", format: "datetime" }
+              }
+            }
+          }
+        }
+      }
+    ],
+
+    auth: {
+      method: "atproto-oauth",
+      dpop: true,
+      scope: "atproto repo:site.filae.chorus.note repo:site.filae.chorus.rating",
+      clientMetadata: `${origin}/oauth/client-metadata.json`,
+      note: "Auth required only for creating notes and ratings. All read endpoints are public."
+    },
+
+    membership: {
+      type: "open",
+      description: "No membership required. Anyone with an ATProto account can create notes and ratings."
+    },
+
+    read: {
+      notes: { method: "GET", path: "/api/notes", query: { subject: "at-uri" }, description: "Get all notes for a given AT-URI" },
+      certified: { method: "GET", path: "/api/certified", query: { subject: "at-uri" }, description: "Get only certified (bridging-consensus) notes for a given AT-URI" },
+      note: { method: "GET", path: "/api/note/:did/:rkey", description: "Get a specific note with its ratings and status" },
+      stats: { method: "GET", path: "/api/stats", description: "System statistics: note count, rating count, certified count" }
+    },
+
+    write: {
+      note: {
+        create: {
+          description: "Create a community note on any AT-URI. Two-step: (1) create ATProto record, (2) index with Chorus.",
+          steps: [
+            {
+              step: 1,
+              action: "Create ATProto record",
+              method: "POST",
+              url: "https://bsky.social/xrpc/com.atproto.repo.createRecord",
+              body: {
+                repo: "<user-did>",
+                collection: "site.filae.chorus.note",
+                record: { subject: "at-uri", body: "string", sources: "?string[]", createdAt: "datetime" }
+              }
+            },
+            {
+              step: 2,
+              action: "Index with Chorus",
+              method: "POST",
+              path: "/api/index/note",
+              body: { uri: "<at-uri from step 1>", did: "<user-did>" }
+            }
+          ]
+        }
+      },
+      rating: {
+        create: {
+          description: "Rate a community note. Same two-step pattern.",
+          steps: [
+            {
+              step: 1,
+              action: "Create ATProto record",
+              method: "POST",
+              url: "https://bsky.social/xrpc/com.atproto.repo.createRecord",
+              body: {
+                repo: "<user-did>",
+                collection: "site.filae.chorus.rating",
+                record: { note: "at-uri (the note)", helpful: "yes|somewhat|no", tags: "?string[]", createdAt: "datetime" }
+              }
+            },
+            {
+              step: 2,
+              action: "Index with Chorus",
+              method: "POST",
+              path: "/api/index/rating",
+              body: { uri: "<at-uri from step 1>", did: "<user-did>" }
+            }
+          ]
+        }
+      }
+    },
+
+    algorithm: {
+      name: "2D Bridging-Based Consensus",
+      description: "Notes are certified when rated helpful by users with diverse perspectives. Uses 2D matrix factorization with entropy-based axis rotation to separate common ground from polarity. Resists coordinated attack patterns.",
+      schedule: "Runs every 5 minutes via cron trigger",
+      certification: {
+        criteria: "commonGround > 0.35 AND |polarity| < 0.5 AND ratings >= 5",
+        description: "A note must achieve positive common ground score (helpful across diverse raters), low polarity (not just one faction), and a minimum number of ratings."
+      }
+    },
+
+    agentGuidance: {
+      quickStart: "To annotate a post: (1) authenticate via ATProto, (2) create a site.filae.chorus.note record on your PDS with the target post's AT-URI as subject, (3) POST /api/index/note to register it with Chorus. To check existing notes on a post: GET /api/notes?subject=at://did/collection/rkey",
+      dataOwnership: "All notes and ratings are stored as ATProto records on users' PDSes. Chorus D1 is an index for aggregation and algorithm computation.",
+      certificationProcess: "Notes start as 'needs_more_ratings'. The bridging algorithm runs every 5 minutes and evaluates all notes with sufficient ratings. Certified notes have been rated helpful by users who otherwise disagree — the 'bridging' signal."
+    }
+  }, 200, {
+    'Cache-Control': 'public, max-age=3600'
+  });
+});
+
 // Main UI
 app.get('/', (c) => {
   const origin = new URL(c.req.url).origin;
