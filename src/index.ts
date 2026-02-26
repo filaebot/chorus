@@ -11,8 +11,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import {
-  runBridgingAlgorithm,
-  certifyNotes,
+  runBridgingAlgorithm2D,
+  certifyNotes2D,
   computeAverageRatings,
   type Rating,
 } from './bridging';
@@ -384,8 +384,8 @@ async function runAlgorithm(db: D1Database) {
       return { success: true, message: 'No ratings to process', runId };
     }
 
-    // Run bridging algorithm
-    const params = runBridgingAlgorithm(ratings, 20);
+    // Run 2D bridging algorithm with entropy-based axis rotation
+    const params = runBridgingAlgorithm2D(ratings, 20);
 
     // Get rating counts per note
     const ratingCounts = new Map<string, number>();
@@ -396,8 +396,8 @@ async function runAlgorithm(db: D1Database) {
     // Get average ratings
     const avgRatings = computeAverageRatings(ratings);
 
-    // Certify notes
-    const noteStatuses = certifyNotes(params, ratingCounts);
+    // Certify notes using 2D projections
+    const noteStatuses = certifyNotes2D(params, ratingCounts);
 
     // Update notes with computed values
     let certified = 0;
@@ -429,10 +429,12 @@ async function runAlgorithm(db: D1Database) {
       if (ns.status === 'rejected') rejected++;
     }
 
-    // Update rater profiles
-    for (const [did, factor] of params.userFactors) {
+    // Update rater profiles (project 2D factors onto polarity axis for storage)
+    for (const [did, factor2d] of params.userFactors) {
       const intercept = params.userIntercepts.get(did) || 0;
       const ratingCount = ratings.filter((r) => r.userId === did).length;
+      // Store polarity projection as the scalar factor
+      const factor = factor2d[0] * params.polarityAxis[0] + factor2d[1] * params.polarityAxis[1];
 
       await db.prepare(`
         INSERT INTO raters (did, factor, intercept, rating_count, last_updated_at)
