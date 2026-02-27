@@ -79,7 +79,82 @@ app.get('/oauth/callback', (c) => {
 </body></html>`);
 });
 
-// Capability manifest for agent discovery
+// A2A Agent Card (standard agent discovery)
+app.get('/.well-known/agent.json', (c) => {
+  const origin = new URL(c.req.url).origin;
+  return c.json({
+    name: "Chorus",
+    description: "ATProto-native community notes with bridging-based consensus. Annotate any AT-URI with context, fact-checks, or clarifications. Notes get certified when rated helpful by users with diverse perspectives.",
+    url: origin,
+    version: "2.0.0",
+    provider: {
+      organization: "Filae",
+      url: "https://filae.site"
+    },
+    documentationUrl: `${origin}/.well-known/atproto-capabilities`,
+    capabilities: {
+      streaming: false,
+      pushNotifications: false,
+    },
+    defaultInputModes: ["application/json"],
+    defaultOutputModes: ["application/json", "text/html"],
+    skills: [
+      {
+        id: "read-notes",
+        name: "Read Community Notes",
+        description: "Get all community notes for a given AT-URI (post, profile, etc.). Returns notes with their certification status.",
+        tags: ["read", "community-notes", "atproto"],
+        examples: ["GET /api/notes?subject=at://did/app.bsky.feed.post/rkey"],
+      },
+      {
+        id: "read-certified",
+        name: "Read Certified Notes",
+        description: "Get only certified (bridging-consensus) notes for a given AT-URI. These notes have been rated helpful by users with diverse perspectives.",
+        tags: ["read", "certified", "bridging"],
+        examples: ["GET /api/certified?subject=at://..."],
+      },
+      {
+        id: "create-note",
+        name: "Create Community Note",
+        description: "Annotate any AT-URI with context or fact-check. Two-step: (1) create ATProto record on PDS, (2) POST /api/index/note to register with Chorus. Open to all ATProto users.",
+        tags: ["write", "annotate", "atproto"],
+        examples: ["POST /api/index/note {uri: 'at://did/site.filae.chorus.note/rkey'}"],
+      },
+      {
+        id: "rate-note",
+        name: "Rate a Note",
+        description: "Rate how helpful a community note is (yes/somewhat/no). Two-step ATProto pattern. Ratings from diverse perspectives determine certification.",
+        tags: ["write", "rate", "consensus"],
+        examples: ["POST /api/index/rating {uri: 'at://did/site.filae.chorus.rating/rkey'}"],
+      },
+      {
+        id: "stats",
+        name: "System Statistics",
+        description: "Get overall system stats: note count, rating count, certified count.",
+        tags: ["read", "stats"],
+        examples: ["GET /api/stats"],
+      }
+    ],
+    securitySchemes: {
+      atprotoOAuth: {
+        type: "oauth2",
+        description: "ATProto OAuth with DPoP. Client metadata at /oauth/client-metadata.json."
+      }
+    },
+    extensions: {
+      atproto: {
+        did: "did:plc:dcb6ifdsru63appkbffy3foy",
+        lexicons: ["site.filae.chorus.note", "site.filae.chorus.rating"],
+        capabilityManifest: `${origin}/.well-known/atproto-capabilities`,
+        membership: "open",
+        algorithm: "2D bridging-based matrix factorization with entropy-based axis rotation",
+        dataOwnership: "Notes and ratings stored on user PDSes. Chorus indexes and runs the certification algorithm."
+      }
+    }
+  });
+});
+
+// Capability manifest for agent discovery (ATProto-specific)
 app.get('/.well-known/atproto-capabilities', (c) => {
   const origin = new URL(c.req.url).origin;
   return c.json({
