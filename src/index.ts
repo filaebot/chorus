@@ -782,51 +782,38 @@ function renderUI(origin: string): string {
   <title>CHORUS — Community Notes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0a;
-      --surface: #111;
-      --surface-elevated: #1a1a1a;
-      --border: #333;
-      --border-heavy: #555;
-      --text: #f0f0f0;
-      --text-muted: #aaa;
-      --accent: #ff3e00;
-      --accent-glow: rgba(255, 62, 0, 0.3);
-      --certified: #00ff88;
-      --certified-glow: rgba(0, 255, 136, 0.2);
-      --pending: #ffcc00;
-      --needs-more: #00ccff;
-      --rejected: #ff0055;
-      --mono: 'Space Mono', monospace;
+      --bg: #0B0F14;
+      --surface: #131921;
+      --surface-elevated: #1B2332;
+      --border: rgba(136, 153, 171, 0.15);
+      --text: #E8ECF1;
+      --text-muted: #8899AB;
+      --accent: #4ECDC4;
+      --accent-hover: #5DDDD4;
+      --accent-subtle: rgba(78, 205, 196, 0.1);
+      --certified: #4ECDC4;
+      --certified-glow: rgba(78, 205, 196, 0.25);
+      --pending: #8899AB;
+      --needs-more: #E8B84D;
+      --not-helpful: #E85D75;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --serif: 'Instrument Serif', Georgia, serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: var(--mono);
+      font-family: var(--sans);
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.6;
-      /* Noise texture overlay - subtle */
-      position: relative;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-      opacity: 0.03;
-      pointer-events: none;
-      z-index: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     ::selection {
@@ -834,161 +821,134 @@ function renderUI(origin: string): string {
       color: var(--bg);
     }
 
+    /* LAYOUT */
     .container {
-      max-width: 900px;
+      max-width: 640px;
       margin: 0 auto;
-      padding: 40px 20px;
-      position: relative;
-      z-index: 1;
+      padding: 0 20px;
     }
 
-    /* HEADER - Brutalist typography */
-    header {
-      margin-bottom: 60px;
-      position: relative;
+    /* HERO */
+    .hero {
+      padding: 80px 0 64px;
+      text-align: center;
     }
 
     .logo {
       font-family: var(--serif);
-      font-size: clamp(4rem, 15vw, 8rem);
+      font-size: clamp(5rem, 14vw, 9rem);
       font-weight: 400;
-      letter-spacing: -0.03em;
-      line-height: 0.85;
+      letter-spacing: -0.02em;
+      line-height: 0.9;
       color: var(--text);
-      position: relative;
-      display: inline-block;
-    }
-
-    .logo::before {
-      content: 'CHORUS';
-      position: absolute;
-      left: 3px;
-      top: 3px;
-      color: var(--accent);
-      z-index: -1;
-      opacity: 0.7;
     }
 
     .tagline {
-      font-family: var(--mono);
-      font-size: 11px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.2em;
       color: var(--text-muted);
       margin-top: 20px;
-      padding-left: 4px;
-      border-left: 2px solid var(--accent);
     }
 
-    /* SECTIONS - Asymmetric boxes */
-    .section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      margin-bottom: 24px;
+    .hero-stats {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-stats span {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* AUTH — top bar when logged in, inline when logged out */
+    .auth-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 0;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .handle {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .auth-bar .btn-text {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .auth-bar .btn-text:hover {
+      color: var(--text);
+    }
+
+    .login-form {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .handle-input-wrapper {
+      flex: 1;
       position: relative;
     }
 
-    .section::before {
-      content: '';
-      position: absolute;
-      top: -1px;
-      left: 20px;
-      right: 20px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    }
-
-    .section-header {
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .section-body {
-      padding: 20px;
-    }
-
-    /* AUTH */
-    .auth-logged-in {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .handle {
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    /* INPUTS - Raw, brutalist */
+    /* INPUTS */
     input[type="text"], textarea {
       width: 100%;
-      padding: 14px 16px;
-      border: 1px solid var(--border);
-      background: var(--bg);
+      padding: 12px 0;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
       color: var(--text);
-      font-family: var(--mono);
-      font-size: 16px; /* Prevents iOS zoom on focus */
-      transition: all 0.15s ease;
+      font-family: var(--sans);
+      font-size: 16px;
+      transition: border-color 0.3s ease;
     }
 
     input[type="text"]:focus, textarea:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 0 20px var(--accent-glow);
+      border-bottom-color: var(--accent);
     }
 
     input::placeholder, textarea::placeholder {
       color: var(--text-muted);
-      opacity: 0.6;
+      opacity: 0.5;
     }
 
     textarea {
       min-height: 100px;
       resize: vertical;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
-    /* BUTTONS - Bold, stark */
+    /* BUTTONS */
     button {
-      font-family: var(--mono);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 12px 24px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: var(--bg);
-      border-color: var(--accent);
-      font-weight: 700;
-    }
-
-    .btn-primary:hover {
-      background: var(--text);
-      border-color: var(--text);
-      box-shadow: 0 0 30px var(--accent-glow);
-    }
-
-    .btn-secondary {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border: none;
       background: transparent;
-      color: var(--text);
+      color: var(--accent);
+      cursor: pointer;
+      transition: color 0.2s ease, opacity 0.2s ease;
+      white-space: nowrap;
     }
 
-    .btn-secondary:hover {
-      background: var(--surface-elevated);
-      border-color: var(--text-muted);
+    button:hover {
+      color: var(--accent-hover);
     }
 
     button:disabled {
@@ -996,56 +956,59 @@ function renderUI(origin: string): string {
       cursor: not-allowed;
     }
 
-    /* SEARCH ROW */
+    .btn-primary {
+      background: transparent;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover {
+      color: var(--text);
+    }
+
+    .btn-text {
+      padding: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .btn-text:hover {
+      color: var(--text);
+    }
+
+    /* SEARCH */
+    .search-section {
+      padding-bottom: 48px;
+    }
+
     .search-row {
       display: flex;
-      gap: 0;
+      gap: 8px;
+      align-items: flex-end;
     }
 
     .search-row input {
       flex: 1;
-      border-right: none;
     }
 
     .search-row button {
-      white-space: nowrap;
-      min-width: 100px; /* Prevents button resize during loading state */
+      min-width: 70px;
+      padding-bottom: 12px;
     }
 
-    /* STATS - Horizontal ticker style */
-    .stats-row {
-      display: flex;
-      gap: 0;
-      border: 1px solid var(--border);
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-
-    .stat-item {
-      flex: 1;
-      padding: 16px 20px;
-      border-right: 1px solid var(--border);
-      text-align: center;
-    }
-
-    .stat-item:last-child {
-      border-right: none;
-    }
-
-    .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text);
-      font-family: var(--serif);
-      font-style: italic;
-    }
-
-    .stat-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--text-muted);
-      margin-top: 4px;
+    /* DIVIDER */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0;
     }
 
     /* NOTES */
@@ -1053,222 +1016,235 @@ function renderUI(origin: string): string {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 20px;
+      padding: 48px 0 24px;
     }
 
     .notes-title {
       font-family: var(--serif);
       font-size: 24px;
       font-style: italic;
+      color: var(--text);
     }
 
     .note-count {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .note-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      margin-bottom: 16px;
-      position: relative;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn 0.4s ease both;
     }
 
-    .note-item::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: linear-gradient(90deg, var(--border-heavy) 0%, transparent 100%);
+    .note-item:last-child {
+      border-bottom: none;
     }
 
     .note-body {
-      padding: 20px;
-      font-size: 15px;
-      line-height: 1.7;
       font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--text);
     }
 
     .note-meta {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      font-size: 11px;
+      gap: 16px;
+      margin-top: 12px;
+      font-size: 13px;
       color: var(--text-muted);
     }
 
     .note-author {
-      font-family: var(--mono);
-      letter-spacing: 0.05em;
+      font-family: var(--sans);
+      font-size: 12px;
+      letter-spacing: 0.02em;
     }
 
-    /* STATUS BADGES - Stark, industrial */
+    /* STATUS — dot + text */
     .note-status {
-      padding: 4px 10px;
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-family: var(--mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-family: var(--sans);
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .note-status::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .status-certified {
+      color: var(--certified);
+    }
+    .status-certified::before {
       background: var(--certified);
-      color: var(--bg);
-      box-shadow: 0 0 20px var(--certified-glow);
+      box-shadow: 0 0 6px var(--certified-glow);
+      animation: pulse 2.5s ease-in-out infinite;
     }
 
     .status-pending {
+      color: var(--pending);
+    }
+    .status-pending::before {
       background: var(--pending);
-      color: var(--bg);
     }
 
     .status-needs_more {
+      color: var(--needs-more);
+    }
+    .status-needs_more::before {
       background: var(--needs-more);
-      color: var(--bg);
     }
 
-    .status-rejected {
-      background: var(--rejected);
-      color: var(--text);
+    .status-rejected, .status-not_helpful {
+      color: var(--not-helpful);
+    }
+    .status-rejected::before, .status-not_helpful::before {
+      background: var(--not-helpful);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     .note-sources {
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      font-size: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      font-family: var(--sans);
+      color: var(--text-muted);
     }
 
     .note-sources a {
       color: var(--accent);
       text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.15s;
+      transition: opacity 0.2s;
     }
 
     .note-sources a:hover {
-      border-bottom-color: var(--accent);
+      opacity: 0.8;
+      text-decoration: underline;
     }
 
     /* RATING BUTTONS */
     .rating-buttons {
       display: flex;
-      gap: 0;
-      padding: 0 20px 20px;
+      gap: 16px;
+      margin-top: 14px;
     }
 
     .rating-btn {
-      flex: 1;
-      padding: 10px 12px;
-      font-size: 10px;
-      border-right-width: 0;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      padding: 4px 0;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
     }
 
-    .rating-btn:last-child {
-      border-right-width: 1px;
+    .rating-btn:hover {
+      color: var(--text);
     }
 
     .rating-btn.active {
-      background: var(--accent);
-      color: var(--bg);
-      border-color: var(--accent);
-    }
-
-    /* FORM */
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--text-muted);
-    }
-
-    /* INFO BOX */
-    .info-box {
-      background: var(--surface-elevated);
-      border-left: 3px solid var(--accent);
-      padding: 16px 20px;
-      margin-bottom: 24px;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-
-    .info-box strong {
       color: var(--accent);
-      font-weight: 700;
-    }
-
-    .info-box em {
-      font-family: var(--serif);
-      font-style: italic;
+      font-weight: 600;
     }
 
     /* EMPTY STATE */
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
+      padding: 60px 0;
       color: var(--text-muted);
       font-family: var(--serif);
       font-style: italic;
-      font-size: 16px;
+      font-size: 17px;
     }
 
     /* MESSAGES */
     .message {
-      padding: 14px 20px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      border-left: 3px solid;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      border-radius: 4px;
     }
 
     .message-error {
-      background: rgba(255, 0, 85, 0.1);
-      border-color: var(--rejected);
-      color: #ff6b8a;
+      background: rgba(232, 93, 117, 0.1);
+      color: var(--not-helpful);
     }
 
     .message-success {
-      background: rgba(0, 255, 136, 0.1);
-      border-color: var(--certified);
-      color: var(--certified);
+      background: var(--accent-subtle);
+      color: var(--accent);
     }
 
-    /* LOGIN */
-    .login-form {
-      display: flex;
-      gap: 0;
+    /* CREATE NOTE */
+    .create-section {
+      padding: 48px 0 80px;
     }
 
-    .login-form .handle-input-wrapper {
-      flex: 1;
-      position: relative;
+    .create-section .section-title {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-style: italic;
+      margin-bottom: 8px;
     }
 
-    .login-form .handle-input-wrapper input {
-      width: 100%;
-      border-right: none;
+    .create-hint {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
     }
 
+    .create-hint em {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* TYPEAHEAD */
     .typeahead-dropdown {
       display: none;
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
-      background: var(--surface);
+      background: var(--surface-elevated);
       border: 1px solid var(--border);
       border-top: none;
+      border-radius: 0 0 6px 6px;
       max-height: 320px;
       overflow-y: auto;
       z-index: 100;
@@ -1282,14 +1258,15 @@ function renderUI(origin: string): string {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       cursor: pointer;
-      transition: background 0.1s;
+      transition: background 0.15s;
+      min-height: 44px;
     }
 
     .typeahead-item:hover,
     .typeahead-item.selected {
-      background: rgba(255, 62, 0, 0.1);
+      background: var(--accent-subtle);
     }
 
     .typeahead-avatar {
@@ -1297,7 +1274,7 @@ function renderUI(origin: string): string {
       height: 32px;
       border-radius: 50%;
       object-fit: cover;
-      background: var(--border);
+      background: var(--surface);
       flex-shrink: 0;
     }
 
@@ -1307,7 +1284,7 @@ function renderUI(origin: string): string {
     }
 
     .typeahead-name {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
@@ -1315,9 +1292,8 @@ function renderUI(origin: string): string {
     }
 
     .typeahead-handle {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-muted);
-      font-family: var(--mono);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1325,137 +1301,84 @@ function renderUI(origin: string): string {
 
     .typeahead-loading,
     .typeahead-empty {
-      padding: 12px;
-      font-size: 12px;
+      padding: 14px;
+      font-size: 13px;
       color: var(--text-muted);
       text-align: center;
-      font-family: var(--mono);
     }
 
     .hidden { display: none !important; }
 
-    /* DECORATIVE ELEMENTS */
-    .corner-mark {
-      position: fixed;
-      font-size: 10px;
-      color: var(--text-muted);
-      opacity: 0.4;
-      font-family: var(--mono);
-      letter-spacing: 0.1em;
-    }
-
-    .corner-mark.top-right {
-      top: 20px;
-      right: 20px;
-    }
-
-    .corner-mark.bottom-left {
-      bottom: 20px;
-      left: 20px;
-    }
-
     /* RESPONSIVE */
     @media (max-width: 600px) {
-      .logo { font-size: 3.5rem; }
-      .stats-row { flex-direction: column; }
-      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
-      .stat-item:last-child { border-bottom: none; }
-      .search-row { flex-direction: column; }
-      .search-row input { border-right: 1px solid var(--border); border-bottom: none; }
-      .login-form { flex-direction: column; }
-      .login-form .handle-input-wrapper input { border-right: 1px solid var(--border); border-bottom: none; }
+      .hero { padding: 48px 0 40px; }
+      .search-row { flex-direction: column; gap: 0; }
+      .search-row button { align-self: flex-end; }
+      .login-form { flex-direction: column; gap: 8px; }
+      .rating-buttons { gap: 12px; }
     }
   </style>
 </head>
 <body>
-  <div class="corner-mark top-right">ATProto × Bridging</div>
-  <div class="corner-mark bottom-left">v0.1</div>
-
   <div class="container">
-    <header>
+    <!-- Hero -->
+    <div class="hero">
       <div class="logo">CHORUS</div>
       <p class="tagline">Community notes with bridging-based consensus</p>
-    </header>
+      <p class="hero-stats"><span id="stat-notes">&mdash;</span> notes &middot; <span id="stat-certified">&mdash;</span> certified &middot; <span id="stat-raters">&mdash;</span> contributors</p>
+    </div>
+
+    <!-- Auth -->
+    <div class="auth-bar">
+      <div id="auth-loading">Initializing...</div>
+      <div id="auth-logged-out" class="hidden">
+        <div class="login-form">
+          <div class="handle-input-wrapper">
+            <input type="text" id="handle-input" placeholder="yourname.bsky.social" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            <div class="typeahead-dropdown" id="typeahead-dropdown"></div>
+          </div>
+          <button id="login-btn" class="btn-primary">Connect</button>
+        </div>
+      </div>
+      <div id="auth-logged-in" class="hidden">
+        <span>Signed in as <span class="handle" id="user-handle"></span></span>
+        <button id="logout-btn" class="btn-text">Disconnect</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
 
     <div id="message" class="hidden"></div>
 
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-item">
-        <div class="stat-value" id="stat-notes">—</div>
-        <div class="stat-label">Notes</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-certified">—</div>
-        <div class="stat-label">Certified</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-raters">—</div>
-        <div class="stat-label">Raters</div>
+    <!-- Search -->
+    <div class="search-section" style="padding-top: 48px;">
+      <div class="search-row">
+        <input type="text" id="subject-input" placeholder="Paste a Bluesky post URL" />
+        <button id="search-btn" class="btn-primary">Search</button>
       </div>
     </div>
 
-    <!-- Auth Section -->
-    <div class="section">
-      <div class="section-header">
-        <span>Identity</span>
-      </div>
-      <div class="section-body">
-        <div id="auth-loading">Initializing...</div>
-        <div id="auth-logged-out" class="hidden">
-          <div class="login-form">
-            <div class="handle-input-wrapper">
-              <input type="text" id="handle-input" placeholder="yourname.bsky.social" autocomplete="off" autocapitalize="off" spellcheck="false" />
-              <div class="typeahead-dropdown" id="typeahead-dropdown"></div>
-            </div>
-            <button id="login-btn" class="btn-primary">Connect</button>
-          </div>
-        </div>
-        <div id="auth-logged-in" class="auth-logged-in hidden">
-          <span>Connected as <span class="handle" id="user-handle"></span></span>
-          <button id="logout-btn" class="btn-secondary">Disconnect</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search Section -->
-    <div class="section">
-      <div class="section-header">
-        <span>Lookup</span>
-      </div>
-      <div class="section-body">
-        <div class="search-row">
-          <input type="text" id="subject-input" placeholder="Paste Bluesky post URL" />
-          <button id="search-btn" class="btn-primary">Search</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notes Section (shown after search) -->
-    <div id="notes-section" class="section hidden">
-      <div class="section-header">
-        <span>Notes</span>
+    <!-- Notes (shown after search) -->
+    <div id="notes-section" class="hidden">
+      <div class="divider"></div>
+      <div class="notes-header">
+        <span class="notes-title">Notes</span>
         <span class="note-count" id="note-count"></span>
       </div>
-      <div class="section-body">
-        <div id="notes-list"></div>
-        <div id="empty-notes" class="empty-state hidden">
-          No notes yet. Be the first to add context.
-        </div>
+      <div id="notes-list"></div>
+      <div id="empty-notes" class="empty-state hidden">
+        No notes yet. Be the first to add context.
       </div>
     </div>
 
-    <!-- Create Note Section (shown after search, if logged in) -->
-    <div id="create-note-section" class="section hidden">
-      <div class="section-header">
-        <span>Add Note</span>
-      </div>
-      <div class="section-body">
-        <div class="info-box">
-          <strong>How it works:</strong> Notes get certified when people with
-          <em>diverse perspectives</em> agree they are helpful.
-          Partisan notes that only appeal to one viewpoint do not make the cut.
-        </div>
+    <!-- Create Note (shown after search, if logged in) -->
+    <div id="create-note-section" class="create-section hidden">
+      <div class="divider"></div>
+      <div style="padding-top: 48px;">
+        <div class="section-title">Add a note</div>
+        <p class="create-hint">
+          Notes get certified when people with <em>diverse perspectives</em> agree they are helpful.
+        </p>
         <div class="form-group">
           <label class="form-label">Your note</label>
           <textarea id="note-body" placeholder="Add helpful context, fact-checks, or clarifications..."></textarea>
